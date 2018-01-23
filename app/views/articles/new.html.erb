@@ -1,0 +1,17 @@
+<div id='article-form'>
+<%= form_for @article do |f| %>
+  <br>
+    <%= f.label :title, "Titolo" %>
+    <br>
+  <%= f.text_field :title %>
+ <br>
+  <%= f.label :article, "Articolo"%>
+  <br>
+  <%= f.text_area :article %>
+
+<br>
+  <%= f.submit 'Crea articolo' %>
+
+<% end %>
+
+</div>

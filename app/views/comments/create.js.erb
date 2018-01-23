@@ -1,0 +1,7 @@
+<% if @comment.new_record? %>
+  $('form').effect('highlight', {color:'red'});
+<% else %>
+  $('div#comments').append(" <%= escape_javascript(render @comment) %>");
+  $('div#<%= dom_id(@comment) %>').effect('highlight');
+  $("input[name='comment[body]']").val("");
+<% end %>

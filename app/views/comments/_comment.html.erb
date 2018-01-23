@@ -1,0 +1,6 @@
+<% if comment.id %>
+<%= content_tag :div, id: dom_id(comment) do %>
+<b>Commento:</b> <%= comment.body %>
+<% end %>
+
+<% end %>

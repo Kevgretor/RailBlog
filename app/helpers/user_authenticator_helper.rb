@@ -1,0 +1,2 @@
+module UserAuthenticatorHelper
+end
