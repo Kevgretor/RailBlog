@@ -1,17 +1,14 @@
 class UserAuthenticatorController < ApplicationController
-
   def login
-    if check_user_session
-      render 'logout'
-    end
+    render 'logout' if check_user_session
   end
 
   def authenticate
     if user_params[:username] == 'dottorx' && user_params[:password] == 'dottorx'
-        session[:user_id] = user_params[:username]
-        redirect_to :root
+      session[:user_id] = user_params[:username]
+      redirect_to :root
     else
-      flash.now[:notice] = "Autenticazione errata"
+      flash.now[:notice] = 'Autenticazione errata'
       render 'login'
     end
   end
@@ -26,6 +23,7 @@ class UserAuthenticatorController < ApplicationController
   end
 
   private
+
   def check_user_session
     session[:user_id]
   end
