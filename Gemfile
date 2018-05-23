@@ -40,9 +40,10 @@ group :development, :test do
   gem 'capybara', '~> 2.13'
   gem 'selenium-webdriver'
 
+  gem 'awesome_print'
   gem 'rspec-rails', '~> 3.7'
+  gem 'rspec_junit_formatter'
   gem 'shoulda-matchers', '~> 3.1'
-  gem "rspec_junit_formatter"
 end
 
 group :development do
