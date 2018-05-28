@@ -2,60 +2,83 @@
 #
 # Check https://circleci.com/docs/2.0/language-ruby/ for more details
 #
-version: 2
+workflows:
+  version: 2
+
+  build-approve-deploy:
+    jobs:
+      - bundle
+      - unit-tests:
+          requires:
+            - bundle
+      - go-staging:
+          requires:
+            - unit-tests
+          filters:
+            branches:
+              only: master
+
 jobs:
-  build:
+  bundle:
     docker:
-      # specify the version you desire here
-       - image: circleci/ruby:2.4.1-node-browsers
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    working_directory: ~/repo
-
+      - image: circleci/ruby:2.4.1-node
     steps:
       - checkout
-
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "Gemfile.lock" }}
+          - v1.1-dependencies-{{ checksum "Gemfile.lock" }}
           # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+          - v1.1-dependencies-
 
       - run:
           name: install dependencies
           command: |
-            bundle install --jobs=4 --retry=3 --path vendor/bundle
+            bundle install --jobs=4 --retry=3 --path ./vendor/bundle
 
       - save_cache:
           paths:
             - ./vendor/bundle
-          key: v1-dependencies-{{ checksum "Gemfile.lock" }}
+          key: v1.1-dependencies-{{ checksum "Gemfile.lock" }}
 
       # Database setup
-      - run: bundle exec rake db:create
-      - run: bundle exec rake db:schema:load
-
-      # run tests!
       - run:
-          name: run tests
+          name: create database
           command: |
-            mkdir /tmp/test-results
-            TEST_FILES="$(circleci tests glob "spec/**/*_spec.rb" | circleci tests split --split-by=timings)"
+            bundle exec rake db:create
+      - run:
+          name: load schema
+          command: |
+            bundle exec rake db:schema:load
 
-            bundle exec rspec --format progress \
-                            --format RspecJunitFormatter \
-                            --out /tmp/test-results/rspec.xml \
-                            --format progress \
-                            $TEST_FILES
+  unit-tests:
+    docker:
+      - image: circleci/ruby:2.4.1-node
+        environment:
+          RAILS_ENV: test
+          CI_BUILD_NAME: units
 
-      # collect reports
-      - store_test_results:
-          path: /tmp/test-results
-      - store_artifacts:
-          path: /tmp/test-results
-          destination: test-results
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1.1-dependencies-{{ checksum "Gemfile.lock" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1.1-dependencies-
+      - run:
+          name: Bundle Install
+          command: bundle check || bundle install --path vendor/bundle
+      - run:
+          name: Rspec
+          command: bundle exec rspec --require spec_helper
+
+  # Staging deploy
+  go-staging:
+    docker:
+      - image: cgswong/aws
+    steps:
+      - deploy:
+          name: Deploy Staging
+          command: |
+            aws opsworks --region eu-central-1 update-app --app-id ee851199-14d7-4865-84a2-3aca37d042f4 --app-source Revision=$CIRCLE_SHA1
+            aws opsworks --region eu-central-1 create-deployment --stack-id c52331b2-f2f2-4892-8d7c-e21c900874eb --app-id ee851199-14d7-4865-84a2-3aca37d042f4 --command "{\"Name\":\"deploy\"}"
