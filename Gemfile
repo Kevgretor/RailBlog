@@ -67,3 +67,5 @@ gem 'pry'
 
 gem 'jquery-rails'
 gem 'jquery-ui-rails'
+
+gem 'aws-sdk-s3', require: false
